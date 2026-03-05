@@ -1,15 +1,13 @@
 package snapshot
 
 type CpuSnapshot struct {
-	User    uint64
-	Nice    uint64
-	System  uint64
-	Idle    uint64
-	Iowait  uint64
-	Irq     uint64
-	Softirq uint64
-	Steal   uint64
-	Total   uint64
+	User    uint64 `json:"mount"`
+	Nice    uint64 `json:"nice"`
+	System  uint64 `json:"system"`
+	Idle    uint64 `json:"idle"`
+	Iowait  uint64 `json:"iowait"`
+	Irq     uint64 `json:"irq"`
+	Softirq uint64 `json:"softirq"`
+	Steal   uint64 `json:"steal"`
+	Total   uint64 `json:"total"`
 }
-
-
