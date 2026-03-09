@@ -1,19 +1,11 @@
 package snapshot
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
-
-type Snapshot struct {
-	Device_id         string
-	Timestamp         time.Time
-	Cpu_usage_percent float64
-	Mem_total_bytes   uint64
-	Mem_used_bytes    uint64
-}
 
 func ReadCPUSnapshot() (total CpuSnapshot, cores map[string]CpuSnapshot, err error) {
 	// здесь парс филдов
@@ -86,7 +78,7 @@ func ReadCPUSnapshot() (total CpuSnapshot, cores map[string]CpuSnapshot, err err
 		cores[name] = snap
 	}
 	if total.Total == 0 {
-		return CpuSnapshot{}, nil, os.ErrNotExist
+		return CpuSnapshot{}, nil, errors.New("cpu total snapshot not found")
 	}
 	return total, cores, nil
 }

@@ -37,11 +37,11 @@ type NetIfaceStat struct {
 }
 
 type NetworkStat struct {
-	RxBytesTotal uint64 `json:"rx_bytes_total"`
-	TxBytesTotal uint64 `json:"tx_bytes_total"`
-	RxBpsTotal   float64 `json:"rx_bps_total"`
-	TxBpsTotal   float64 `json:"tx_bps_total"`
-	Ifaces []NetIfaceStat `json:"ifaces,omitempty"`
+	RxBytesTotal uint64         `json:"rx_bytes_total"`
+	TxBytesTotal uint64         `json:"tx_bytes_total"`
+	RxBpsTotal   float64        `json:"rx_bps_total"`
+	TxBpsTotal   float64        `json:"tx_bps_total"`
+	Ifaces       []NetIfaceStat `json:"ifaces,omitempty"`
 }
 
 type Metrics struct {
@@ -49,6 +49,6 @@ type Metrics struct {
 	HostID    string      `json:"host_id"`
 	CPU       CPUStat     `json:"cpu"`
 	Mem       MemStat     `json:"mem"`
-	Disk      DiskStat    `json:"disk"`
+	Disk      []DiskStat  `json:"disk"`
 	Network   NetworkStat `json:"network"`
 }
