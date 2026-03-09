@@ -1,21 +1,7 @@
 package main
 
-import (
-	"agent/internal/snapshot"
-	"fmt"
-	"log"
-)
-
 func main() {
-	total, cores, err := snapshot.ReadCPUSnapshot()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("TOTAL:", total)
-	fmt.Println("cores:", len(cores))
-	if c4, ok := cores["cpu4"]; ok {
-		fmt.Println("cpu4:", c4)
-	}
+	//CPUCoresMetrics, CPUMetrics :=
 }
 
 // тест
