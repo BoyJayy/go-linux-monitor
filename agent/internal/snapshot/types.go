@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+type DiskSnapshot struct {
+	Total uint64
+	Free  uint64
+	Used  uint64
+}
+
 type MemSnapshot struct {
 	Total     uint64
 	Available uint64
