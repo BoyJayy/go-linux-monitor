@@ -3,14 +3,15 @@ package snapshot
 import "time"
 
 type CPUStat struct {
-	TotalPct   float64 `json:"total_pct"`
-	UserPct    float64 `json:"user_pct"`
-	SystemPct  float64 `json:"system_pct"`
-	NicePct    float64 `json:"nice_pct"`
-	IowaitPct  float64 `json:"iowait_pct"`
-	IrqPct     float64 `json:"irq_pct"`
-	SoftirqPct float64 `json:"softirq_pct"`
-	StealPct   float64 `json:"steal_pct"`
+	TotalPct   float64            `json:"total_pct"`
+	UserPct    float64            `json:"user_pct"`
+	SystemPct  float64            `json:"system_pct"`
+	NicePct    float64            `json:"nice_pct"`
+	IowaitPct  float64            `json:"iowait_pct"`
+	IrqPct     float64            `json:"irq_pct"`
+	SoftirqPct float64            `json:"softirq_pct"`
+	StealPct   float64            `json:"steal_pct"`
+	PerCorePct map[string]float64 `json:"per_core_pct"`
 }
 
 type MemStat struct {
