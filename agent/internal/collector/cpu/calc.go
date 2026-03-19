@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-func CPUCalculation(prev CpuSnapshot, cur CpuSnapshot) (float64, error) {
+func CPUCalculation(prev CPUCounters, cur CPUCounters) (float64, error) {
 	curIdle, prevIdle := cur.Idle+cur.Iowait, prev.Idle+prev.Iowait
 	if cur.Total < prev.Total || curIdle < prevIdle {
 		return 0.0, errors.New("Incorrect snapshot appeared")
@@ -20,7 +20,7 @@ func CPUCalculation(prev CpuSnapshot, cur CpuSnapshot) (float64, error) {
 	return busy / float64(deltaTotal) * 100, nil
 }
 
-func CPUPerCoreCalculation(prevCores map[string]CpuSnapshot, curCores map[string]CpuSnapshot) (map[string]float64, error) {
+func CPUPerCoreCalculation(prevCores map[string]CPUCounters, curCores map[string]CPUCounters) (map[string]float64, error) {
 	if len(prevCores) != len(curCores) {
 		return nil, errors.New("Incorrect percore CPU snapshot appeared")
 	}

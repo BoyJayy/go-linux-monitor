@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-func ReadCPUSnapshot() (total CpuSnapshot, cores map[string]CpuSnapshot, err error) {
+func ReadCPUCounters() (total CPUCounters, cores map[string]CPUCounters, err error) {
 	// здесь парс филдов
-	cores = make(map[string]CpuSnapshot)
+	cores = make(map[string]CPUCounters)
 	proc, err := os.ReadFile("/proc/stat")
 	if err != nil {
-		return CpuSnapshot{}, nil, err
+		return CPUCounters{}, nil, err
 	}
 	strs := strings.Split(string(proc), "\n")
 	for i := 0; i < len(strs); i++ {
@@ -29,38 +29,38 @@ func ReadCPUSnapshot() (total CpuSnapshot, cores map[string]CpuSnapshot, err err
 		}
 		user, err := strconv.ParseUint(fields[1], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		nice, err := strconv.ParseUint(fields[2], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		system, err := strconv.ParseUint(fields[3], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		idle, err := strconv.ParseUint(fields[4], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		iowait, err := strconv.ParseUint(fields[5], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		irq, err := strconv.ParseUint(fields[6], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		softirq, err := strconv.ParseUint(fields[7], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		steal, err := strconv.ParseUint(fields[8], 10, 64)
 		if err != nil {
-			return CpuSnapshot{}, nil, err
+			return CPUCounters{}, nil, err
 		}
 		tot := user + nice + system + idle + iowait + irq + softirq + steal
-		snap := CpuSnapshot{
+		snap := CPUCounters{
 			User:    user,
 			Nice:    nice,
 			System:  system,
@@ -78,7 +78,7 @@ func ReadCPUSnapshot() (total CpuSnapshot, cores map[string]CpuSnapshot, err err
 		cores[name] = snap
 	}
 	if total.Total == 0 {
-		return CpuSnapshot{}, nil, errors.New("cpu total snapshot not found")
+		return CPUCounters{}, nil, errors.New("cpu total snapshot not found")
 	}
 	return total, cores, nil
 }

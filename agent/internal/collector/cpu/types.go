@@ -1,6 +1,6 @@
 package cpu
 
-type CpuSnapshot struct {
+type CPUCounters struct {
 	User    uint64 `json:"mount"`
 	Nice    uint64 `json:"nice"`
 	System  uint64 `json:"system"`
