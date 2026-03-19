@@ -17,7 +17,7 @@ A lightweight cross-platform monitoring system for Linux single-board computers.
 
 ## Architecture
 
-Agent → HTTP → Server
+Agent -> HTTP -> Server
 
 - Agent collects metrics from /proc and /sys
 - Server accepts and processes metrics
