@@ -1,4 +1,4 @@
-package snapshot
+package disk
 
 import "golang.org/x/sys/unix"
 
@@ -16,5 +16,4 @@ func ReadDiskSnapshot() (snap DiskSnapshot, err error) {
 		Free:  free,
 		Used:  used,
 	}, nil
-
 }

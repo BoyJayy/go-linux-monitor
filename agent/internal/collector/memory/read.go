@@ -1,4 +1,4 @@
-package snapshot
+package memory
 
 import (
 	"errors"
