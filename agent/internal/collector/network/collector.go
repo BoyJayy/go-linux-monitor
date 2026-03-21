@@ -37,7 +37,7 @@ func Collect(interval time.Duration) (NetworkStat, error) {
 		}
 		rxDelta := curIface.RxBytes - prevIface.RxBytes
 		txDelta := curIface.TxBytes - prevIface.TxBytes
-		rxBps := float64(rxDelta) / seconds
+		rxBps := float64(rxDelta) / seconds //bytes per sec
 		txBps := float64(txDelta) / seconds
 		newIfaces = append(newIfaces, NetIfaceStat{
 			Name:    curIface.Name,

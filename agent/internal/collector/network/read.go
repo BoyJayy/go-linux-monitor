@@ -37,7 +37,6 @@ func ReadNetworkInterfaces() ([]NetIfaceStat, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		txBytes, err := strconv.ParseUint(fields[8], 10, 64)
 		if err != nil {
 			return nil, err
