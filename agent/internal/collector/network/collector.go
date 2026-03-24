@@ -5,18 +5,18 @@ import (
 	"time"
 )
 
-func Collect(interval time.Duration) (NetworkStat, error) {
+func Collect(interval time.Duration) (NetworkUsage, error) {
 	if interval <= 0 {
-		return NetworkStat{}, errors.New("interval must be positive")
+		return NetworkUsage{}, errors.New("interval must be positive")
 	}
 	prevIfaces, err := ReadNetworkInterfaces()
 	if err != nil {
-		return NetworkStat{}, err
+		return NetworkUsage{}, err
 	}
 	time.Sleep(interval)
 	curIfaces, err := ReadNetworkInterfaces()
 	if err != nil {
-		return NetworkStat{}, err
+		return NetworkUsage{}, err
 	}
 	prevByName := make(map[string]NetIfaceStat, len(prevIfaces))
 	for _, iface := range prevIfaces {
@@ -51,7 +51,7 @@ func Collect(interval time.Duration) (NetworkStat, error) {
 		rxBpsTotal += rxBps
 		txBpsTotal += txBps
 	}
-	return NetworkStat{
+	return NetworkUsage{
 		RxBytesTotal: rxTotal,
 		TxBytesTotal: txTotal,
 		RxBpsTotal:   rxBpsTotal,

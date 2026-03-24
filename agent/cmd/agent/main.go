@@ -1,45 +1,38 @@
 package main
 
 import (
-	"agent/internal/collector/cpu"
-	"agent/internal/collector/disk"
-	"agent/internal/collector/memory"
-	"agent/internal/collector/network"
+	"agent/internal/snapshot"
 	"fmt"
 	"time"
 )
 
+/*type snapshotResult struct {
+	stat snapshot.Metrics
+	err  error
+}*/
+
 func main() {
-	for {
-		cpu, err := cpu.Collect(1 * time.Second)
+	var interval time.Duration = 2 * time.Second
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for range ticker.C {
+		/*metricsCh := make(chan snapshotResult, 1)
+		go func() {
+			metric, err := snapshot.BuildSnapshot(interval)
+			metricsCh <- snapshotResult{stat: metric, err: err}
+		}()*/
+		metrics, err := snapshot.BuildSnapshot(interval) // _ while i want implement http/grpc
+		//time.Sleep(interval) - as for me bad asf cuz when we receiving data - already spending interval so that's gonna be interval*2 time (for that version it could be fine but ill try to implement one that gonna fit the most there)
 		if err != nil {
-			fmt.Println("huina cpu")
-			return
+			fmt.Println("Error while reading metrics:", err)
 		}
-		disk, err := disk.Collect()
-		if err != nil {
-			fmt.Println("huina disk", err)
-			return
-		}
-		network, err := network.Collect(1 * time.Second)
-		if err != nil {
-			fmt.Println("huina network")
-			return
-		}
-		memory, err := memory.Collect()
-		if err != nil {
-			fmt.Println("huina memory")
-			return
-		}
-		fmt.Println(cpu)
-		fmt.Println(disk)
-		fmt.Println(network)
-		fmt.Println(memory)
-		time.Sleep(10 * time.Second)
+		fmt.Printf("%+v\n", metrics)
+		// any realization like sending with our sender (not done yet ofc :-) )
 	}
+
 }
 
-// тест
+// тест cборки метрик
 /*
 ❯ docker run --rm -it \
   -v "$PWD":/usr/src/app \
