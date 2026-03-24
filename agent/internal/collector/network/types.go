@@ -8,7 +8,7 @@ type NetIfaceStat struct {
 	TxBps   float64
 }
 
-type NetworkStat struct {
+type NetworkUsage struct {
 	RxBytesTotal uint64
 	TxBytesTotal uint64
 	RxBpsTotal   float64
