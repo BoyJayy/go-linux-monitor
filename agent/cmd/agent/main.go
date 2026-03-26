@@ -1,9 +1,10 @@
 package main
 
 import (
+	"agent/internal/config"
 	"agent/internal/snapshot"
 	"fmt"
-	"time"
+	"log"
 )
 
 /*type snapshotResult struct {
@@ -12,17 +13,20 @@ import (
 }*/
 
 func main() {
-	var interval time.Duration = 2 * time.Second
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	for {
 		/*metricsCh := make(chan snapshotResult, 1)
 		go func() {
 			metric, err := snapshot.BuildSnapshot(interval)
 			metricsCh <- snapshotResult{stat: metric, err: err}
 		}()*/
-		metrics, err := snapshot.BuildSnapshot(interval) // _ while i want implement http/grpc
+		metrics, err := snapshot.BuildSnapshot(cfg.CollectionInterval) // _ while i want implement http/grpc
 		//time.Sleep(interval) - as for me bad asf cuz when we receiving data - already spending interval so that's gonna be interval*2 time (for that version it could be fine but ill try to implement one that gonna fit the most there)
 		if err != nil {
-			fmt.Println("Error while reading metrics:", err)
+			log.Printf("Error while reading metrics: %v", err)
 		}
 		fmt.Printf("%+v\n", metrics)
 		// any realization like sending with our sender (not done yet ofc :-) )
