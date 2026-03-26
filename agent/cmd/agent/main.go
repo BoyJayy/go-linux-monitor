@@ -13,9 +13,7 @@ import (
 
 func main() {
 	var interval time.Duration = 2 * time.Second
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for range ticker.C {
+	for {
 		/*metricsCh := make(chan snapshotResult, 1)
 		go func() {
 			metric, err := snapshot.BuildSnapshot(interval)
@@ -29,7 +27,6 @@ func main() {
 		fmt.Printf("%+v\n", metrics)
 		// any realization like sending with our sender (not done yet ofc :-) )
 	}
-
 }
 
 // тест cборки метрик
