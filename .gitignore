@@ -7,6 +7,7 @@
 *.dylib
 *.test
 *.out
+*.env
 
 # Build folders / artifacts
 bin/
@@ -40,5 +41,5 @@ go.work.sum
 Thumbs.db
 
 # --- Project-specific ---
-# ignore personal diary in repo root
 /diary.md
+/roadmap.pdf

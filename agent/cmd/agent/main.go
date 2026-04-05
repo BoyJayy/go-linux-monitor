@@ -2,8 +2,8 @@ package main
 
 import (
 	"agent/internal/config"
+	"agent/internal/sender"
 	"agent/internal/snapshot"
-	"fmt"
 	"log"
 )
 
@@ -17,6 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	sender := sender.NewHTTP(cfg.ServerURL, cfg.RequestTimeout)
 	for {
 		/*metricsCh := make(chan snapshotResult, 1)
 		go func() {
@@ -27,8 +28,14 @@ func main() {
 		//time.Sleep(interval) - as for me bad asf cuz when we receiving data - already spending interval so that's gonna be interval*2 time (for that version it could be fine but ill try to implement one that gonna fit the most there)
 		if err != nil {
 			log.Printf("Error while reading metrics: %v", err)
+			continue
 		}
-		fmt.Printf("%+v\n", metrics)
+		//fmt.Printf("%+v\n", metrics)
+		err = sender.Send(metrics)
+		if err != nil {
+			log.Printf("Error while sending metrics: %v", err)
+			continue
+		}
 		// any realization like sending with our sender (not done yet ofc :-) )
 	}
 }
