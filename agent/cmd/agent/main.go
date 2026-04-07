@@ -7,11 +7,6 @@ import (
 	"log"
 )
 
-/*type snapshotResult struct {
-	stat snapshot.Metrics
-	err  error
-}*/
-
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -40,13 +35,23 @@ func main() {
 	}
 }
 
+//go run ./cmd/server
+//http://host.docker.internal:8080/api/v1/metrics
+// контейнер юрл для тестов на маке
 // тест cборки метрик
 /*
-❯ docker run --rm -it \
-  -v "$PWD":/usr/src/app \
-  -w /usr/src/app \
-  golang:1.25.5 \
-  go run ./cmd/agent
+новый контейнер с эндпоинтом и прочими енв валидами
+
+docker run --rm -it \
+-v "$PWD":/usr/src/app \
+-w /usr/src/app \
+-e SERVER_URL=http://host.docker.internal:8080/api/v1/metrics \
+-e COLLECTION_INTERVAL=2s \
+-e REQUEST_TIMEOUT=3s \
+golang:1.25.5 \
+go run ./cmd/agent
+
+
 go: downloading golang.org/x/sys v0.42.0
 {0 0 0 100 0 0 0 0 0 map[cpu0:{0 0 0 100 0 0 0 0 0} cpu1:{0 0 0 100 0 0 0 0 0} cpu2:{0 0 0 100 0 0 0 0 0} cpu3:{0 0 0 100 0 0 0 0 0} cpu4:{0 0 0 100 0 0 0 0 0} cpu5:{0 0 0 100 0 0 0 0 0} cpu6:{0 0 0 100 0 0 0 0 0} cpu7:{0 0 0 100 0 0 0 0 0}]}
 [{/ 485473984512 481838170112 3635814400 0.7489205428082273} {/etc/resolv.conf 485473984512 481838170112 3635814400 0.7489205428082273} {/etc/hostname 485473984512 481838170112 3635814400 0.7489205428082273} {/etc/hosts 485473984512 481838170112 3635814400 0.7489205428082273} {/usr/src/app 126562507685888 82537996091392 44024511594496 34.78479717212875}]
