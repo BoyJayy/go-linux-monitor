@@ -1,6 +1,10 @@
 package disk
 
-import "golang.org/x/sys/unix"
+import (
+	"monitoring/api"
+
+	"golang.org/x/sys/unix"
+)
 
 func ReadDiskCounters(mountpoint string) (snap DiskCounters, err error) {
 	var stat unix.Statfs_t
@@ -18,12 +22,12 @@ func ReadDiskCounters(mountpoint string) (snap DiskCounters, err error) {
 	}, nil
 }
 
-func ConvertFromCountersToUsage(mountpoint string, snap DiskCounters) DiskUsage {
+func ConvertFromCountersToUsage(mountpoint string, snap DiskCounters) api.DiskUsage {
 	pct := float64(0)
 	if snap.Total != 0 {
 		pct = float64(snap.Used) / float64(snap.Total) * 100
 	}
-	return DiskUsage{
+	return api.DiskUsage{
 		Mount:      mountpoint,
 		TotalBytes: snap.Total,
 		FreeBytes:  snap.Free,

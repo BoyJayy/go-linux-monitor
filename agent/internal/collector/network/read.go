@@ -2,13 +2,15 @@ package network
 
 import (
 	"errors"
+	"monitoring/api"
+
 	//"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
 
-func ReadNetworkInterfaces() ([]NetIfaceStat, error) {
+func ReadNetworkInterfaces() ([]api.NetIfaceStat, error) {
 	file, err := os.ReadFile("/proc/net/dev")
 	if err != nil {
 		return nil, err
@@ -18,7 +20,7 @@ func ReadNetworkInterfaces() ([]NetIfaceStat, error) {
 	if len(lines) < 3 {
 		return nil, errors.New("invalid /proc/net/dev format")
 	}
-	var ifaces []NetIfaceStat
+	var ifaces []api.NetIfaceStat
 	for _, line := range lines[2:] {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -41,7 +43,7 @@ func ReadNetworkInterfaces() ([]NetIfaceStat, error) {
 		if err != nil {
 			return nil, err
 		}
-		ifaces = append(ifaces, NetIfaceStat{
+		ifaces = append(ifaces, api.NetIfaceStat{
 			Name:    name,
 			RxBytes: rxBytes,
 			TxBytes: txBytes,

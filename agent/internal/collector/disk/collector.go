@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"monitoring/api"
 )
 
 var skippedTypes = map[string]struct{}{
@@ -35,14 +36,14 @@ func shouldSkipMount(mount string) bool {
 	return mount == "/proc" || mount == "/sys" || mount == "/dev" || mount == "/run"
 }
 
-func Collect() ([]DiskUsage, error) {
+func Collect() ([]api.DiskUsage, error) {
 	file, err := os.ReadFile("/proc/mounts")
 	if err != nil {
-		return []DiskUsage{}, err
+		return []api.DiskUsage{}, err
 	}
 
 	mounts := strings.Split(string(file), "\n")
-	usagesList := make([]DiskUsage, 0)
+	usagesList := make([]api.DiskUsage, 0)
 
 	for _, mount := range mounts {
 		fields := strings.Fields(mount)
@@ -65,7 +66,7 @@ func Collect() ([]DiskUsage, error) {
 		usagesList = append(usagesList, usage)
 	}
 	if len(usagesList) == 0 {
-		return []DiskUsage{}, errors.New("no info about any mounts")
+		return []api.DiskUsage{}, errors.New("no info about any mounts")
 	}
 
 	return usagesList, nil

@@ -1,11 +1,13 @@
 package memory
 
-func Collect() (MemoryUsage, error) {
+import "monitoring/api"
+
+func Collect() (api.MemoryUsage, error) {
 	cur, err := ReadMemCounters()
 	if err != nil {
-		return MemoryUsage{}, err
+		return api.MemoryUsage{}, err
 	}
-	return MemoryUsage{
+	return api.MemoryUsage{
 		TotalBytes:     cur.Total,
 		AvailableBytes: cur.Available,
 		UsedBytes:      cur.Used,

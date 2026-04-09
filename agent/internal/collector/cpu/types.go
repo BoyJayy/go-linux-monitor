@@ -11,28 +11,3 @@ type CPUCounters struct {
 	Steal   uint64
 	Total   uint64
 }
-
-type Usage struct {
-	UserPct    float64
-	NicePct    float64
-	SystemPct  float64
-	IdlePct    float64
-	IowaitPct  float64
-	IrqPct     float64
-	SoftirqPct float64
-	StealPct   float64
-	TotalPct   float64
-}
-
-type UsageWithCores struct {
-	UserPct    float64
-	NicePct    float64
-	SystemPct  float64
-	IdlePct    float64
-	IowaitPct  float64
-	IrqPct     float64
-	SoftirqPct float64
-	StealPct   float64
-	TotalPct   float64
-	PerCorePct map[string]Usage
-}
