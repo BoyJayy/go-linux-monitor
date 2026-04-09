@@ -1,3 +1,4 @@
+
 # Monitoring System API
 
 > Current API contract for the monitoring project.
@@ -39,12 +40,12 @@ Used to verify that the backend process is alive.
 - Status: `200 OK`
 
 #### Example response
+---
 ```json
 {
   "status": "ok"
 }
 ```
-
 ---
 
 ### 3.2 Metrics ingest
@@ -56,9 +57,11 @@ Used to verify that the backend process is alive.
 Accepts one snapshot from the monitoring agent.
 
 #### Request headers
+---
 ```http
 Content-Type: application/json
 ```
+---
 
 #### Request body
 JSON object matching the `Metrics` structure.
@@ -67,6 +70,7 @@ JSON object matching the `Metrics` structure.
 
 Current payload shape:
 
+---
 ```json
 {
   "timestamp": "2026-03-24T12:35:24.943217753Z",
@@ -127,6 +131,7 @@ Current payload shape:
   }
 }
 ```
+---
 
 ## 5. Field semantics
 
@@ -198,16 +203,20 @@ Further validation may be extended later.
 ## 8. Example curl requests
 
 ### Health
+---
 ```bash
 curl http://localhost:8080/health
 ```
+---
 
 ### Metrics ingest
+---
 ```bash
 curl -X POST http://localhost:8080/api/v1/metrics \
   -H "Content-Type: application/json" \
   -d @metrics.json
 ```
+---
 
 ## 9. Agent configuration related to the API
 
