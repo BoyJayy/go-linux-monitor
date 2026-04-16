@@ -12,6 +12,7 @@ import (
 func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return;
 	}
 	defer r.Body.Close()
 	log.Println("HandleMetricsPost called")
@@ -24,7 +25,7 @@ func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Reques
 		http.Error(w, errDTO.toString(), http.StatusBadRequest)
 		return
 	}
-
+	h.storage.Save(metricsDTO);
 	log.Printf("v1 receiver method: %+v\n", time.Now())
 	log.Printf("received metrics: %+v\n", metricsDTO)
 	w.WriteHeader(http.StatusAccepted)
