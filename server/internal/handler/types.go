@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"monitoring/api"
+	"server/internal/storage"
 	"time"
 )
 
 type HTTPHandlers struct {
-	metrics *api.Metrics
+	storage *storage.Storage
 }
 
 type ErrorDTO struct {

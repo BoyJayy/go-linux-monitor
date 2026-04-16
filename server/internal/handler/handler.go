@@ -1,9 +1,12 @@
 package handler
 
-import "monitoring/api"
+import (
+	//"monitoring/api"
+	"server/internal/storage"
+)
 
-func NewHTTPHandlers(m *api.Metrics) *HTTPHandlers {
+func NewHTTPHandlers() *HTTPHandlers {
 	return &HTTPHandlers{
-		metrics: m,
+		storage: storage.NewStorage(),
 	}
 }

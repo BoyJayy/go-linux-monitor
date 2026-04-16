@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"monitoring/api"
 	"net/http"
 	"time"
+	//"server/internal/storage"
 )
 
 func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Request) {
@@ -12,6 +14,7 @@ func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 	defer r.Body.Close()
+	log.Println("HandleMetricsPost called")
 	var metricsDTO api.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&metricsDTO); err != nil {
 		errDTO := ErrorDTO{
@@ -21,5 +24,9 @@ func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Reques
 		http.Error(w, errDTO.toString(), http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("v1 receiver method: %+v\n", time.Now())
+	log.Printf("received metrics: %+v\n", metricsDTO)
 	w.WriteHeader(http.StatusAccepted)
+	log.Printf("metrics saved, total=%d\n", h.storage.GelLen())
 }
