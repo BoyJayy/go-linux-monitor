@@ -12,6 +12,7 @@ func NewStorage() *Storage {
 	}
 }
 
+
 func (st *Storage) GelLen() int {
 	return len(st.metrics)
 }
