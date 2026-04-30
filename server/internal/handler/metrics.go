@@ -6,13 +6,12 @@ import (
 	"monitoring/api"
 	"net/http"
 	"time"
-	//"server/internal/storage"
 )
 
 func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return;
+		return
 	}
 	defer r.Body.Close()
 	log.Println("HandleMetricsPost called")
@@ -25,9 +24,22 @@ func (h *HTTPHandlers) HandlePostV1Metrics(w http.ResponseWriter, r *http.Reques
 		http.Error(w, errDTO.toString(), http.StatusBadRequest)
 		return
 	}
-	h.storage.Save(metricsDTO);
-	log.Printf("v1 receiver method: %+v\n", time.Now())
-	log.Printf("received metrics: %+v\n", metricsDTO)
-	w.WriteHeader(http.StatusAccepted)
-	log.Printf("metrics saved, total=%d\n", h.storage.GelLen())
+	if metricsDTO.HostID == "" {
+		http.Error(w, "host_id is required", http.StatusBadRequest)
+		return
+	}
+
+	if metricsDTO.Timestamp.IsZero() {
+		http.Error(w, "timestamp is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.storage.SaveMetrics(r.Context(), metricsDTO); err != nil {
+		log.Printf("failed to save metrics: %v", err)
+		http.Error(w, "failed to save metrics: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"server/internal/handler"
 	"server/internal/server"
+	"server/internal/storage"
 
 	//"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,7 +22,8 @@ func main() {
 		log.Fatal("failed to ping postgres: ", err)
 	}
 	//fmt.Println("successfully started db")
-	httpHandlers := handler.NewHTTPHandlers()
+	store := storage.New(conn)
+	httpHandlers := handler.NewHTTPHandlers(store)
 	httpServer := server.NewHTTPServer(httpHandlers)
 	httpServer.StartServer()
 }

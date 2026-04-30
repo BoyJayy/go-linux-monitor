@@ -10,14 +10,13 @@ import (
 )
 
 func (h *HTTPHandlers) HandleDebugLast(w http.ResponseWriter, r *http.Request) {
-	/*var metricsDTO api.Metrics
-	err := json.NewDecoder(r.Body).Decode(&metricsDTO)
+	lastMetrics, err := h.storage.GetLastMetrics(r.Context())
 	if err != nil {
-		log.Printf("debug failed to decode")
+		log.Printf("debug failed to get last metrics: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}*/
-	last_metrics := h.storage.GetLastMetrics()
-	b, err := json.MarshalIndent(last_metrics, "", "    ")
+		return
+	}
+	b, err := json.MarshalIndent(lastMetrics, "", "    ")
 	if err != nil {
 		log.Printf("debug failed to marshall")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

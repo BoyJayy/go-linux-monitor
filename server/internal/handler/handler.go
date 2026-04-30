@@ -5,8 +5,8 @@ import (
 	"server/internal/storage"
 )
 
-func NewHTTPHandlers() *HTTPHandlers {
+func NewHTTPHandlers(storage *storage.Storage) *HTTPHandlers {
 	return &HTTPHandlers{
-		storage: storage.NewStorage(),
+		storage: storage,
 	}
 }

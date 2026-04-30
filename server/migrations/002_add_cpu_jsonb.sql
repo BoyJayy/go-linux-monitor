@@ -1,0 +1,5 @@
+ALTER TABLE metric_snapshots
+ADD COLUMN IF NOT EXISTS cpu JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+ALTER TABLE metric_snapshots
+ADD COLUMN IF NOT EXISTS memory JSONB NOT NULL DEFAULT '{}'::jsonb;
