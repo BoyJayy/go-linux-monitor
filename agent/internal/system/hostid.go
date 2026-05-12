@@ -4,15 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
 const (
-	machineIDPath = "/etc/machine-id"
-	fallbackPath  = "/var/lib/myagent/host_id"
-	hostIDDir     = "/var/lib/myagent"
+	envHostID     = "HOST_ID"
+	envHostIDFile = "HOST_ID_FILE"
+
+	machineIDPath       = "/etc/machine-id"
+	defaultFallbackPath = "/var/lib/myagent/host_id"
 )
 
 func ReadTrimmedFromPath(path string) (string, error) {
@@ -28,17 +31,24 @@ func ReadTrimmedFromPath(path string) (string, error) {
 }
 
 func ResolveHostId() (string, error) {
+	if id := strings.TrimSpace(os.Getenv(envHostID)); id != "" {
+		return id, nil
+	}
 	if id, err := ReadTrimmedFromPath(machineIDPath); err == nil {
 		return id, nil
+	}
+	fallbackPath := strings.TrimSpace(os.Getenv(envHostIDFile))
+	if fallbackPath == "" {
+		fallbackPath = defaultFallbackPath
 	}
 	if id, err := ReadTrimmedFromPath(fallbackPath); err == nil {
 		return id, nil
 	}
-	if err := os.MkdirAll(hostIDDir, 0755); err != nil {
+	id := uuid.NewString()
+	if err := os.MkdirAll(filepath.Dir(fallbackPath), 0755); err != nil {
 		return "", fmt.Errorf("failed to create host id dir: %w", err)
 	}
-	id := uuid.NewString()
-	if err := os.WriteFile(fallbackPath, []byte(id), 0644); err != nil {
+	if err := os.WriteFile(fallbackPath, []byte(id+"\n"), 0644); err != nil {
 		return "", fmt.Errorf("failed to write fallback host id: %w", err)
 	}
 	return id, nil
