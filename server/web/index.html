@@ -1,60 +1,136 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Linux Nodes Monitoring</title>
+    <title>Linux Cluster Monitor</title>
     <link rel="stylesheet" href="/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <header class="header">
-        <div>
-            <h1>Linux Nodes Monitoring</h1>
-            <p>Distributed monitoring dashboard for Linux nodes</p>
-        </div>
-
-        <button id="refreshBtn">Refresh</button>
-    </header>
-
-    <main class="layout">
-        <section class="panel">
-            <h2>Devices</h2>
-            <div id="devicesList" class="devices-list">
-                Loading devices...
+    <div class="page">
+        <header class="topbar">
+            <div>
+                <div class="eyebrow">Distributed Linux monitoring</div>
+                <h1>Cluster Control Panel</h1>
             </div>
-        </section>
 
-        <section class="panel">
-            <h2>Latest metrics</h2>
-
-            <div id="selectedDevice" class="selected-device">
-                Select a device
+            <div class="topbar-status">
+                <div class="status-cell">
+                    <span class="label">API</span>
+                    <strong id="apiStatus">checking</strong>
+                </div>
+                <div class="status-cell">
+                    <span class="label">Refresh</span>
+                    <strong>2s</strong>
+                </div>
+                <button id="refreshBtn">Refresh now</button>
             </div>
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <span class="metric-label">CPU</span>
-                    <strong id="cpuValue">—</strong>
+        </header>
+
+        <main class="dashboard-grid">
+            <section class="panel nodes-panel">
+                <div class="panel-header">
+                    <h2>Nodes</h2>
+                    <span id="nodesCount" class="panel-meta">0 registered</span>
                 </div>
 
-                <div class="metric-card">
-                    <span class="metric-label">Memory</span>
-                    <strong id="memoryValue">—</strong>
+                <div class="nodes-summary">
+                    <div>
+                        <span class="summary-label">Online</span>
+                        <strong id="onlineCount">0</strong>
+                    </div>
+                    <div>
+                        <span class="summary-label">Offline</span>
+                        <strong id="offlineCount">0</strong>
+                    </div>
                 </div>
-                <div class="metric-card">
-                    <span class="metric-label">Network RX</span>
-                    <strong id="rxValue">—</strong>
+
+                <div id="devicesList" class="nodes-list">
+                    <div class="empty">Loading nodes...</div>
                 </div>
-                <div class="metric-card">
-                    <span class="metric-label">Network TX</span>
-                    <strong id="txValue">—</strong>
+            </section>
+
+            <section class="panel details-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Selected node</h2>
+                        <div id="selectedHost" class="selected-host">No node selected</div>
+                    </div>
+                    <span id="selectedState" class="node-state neutral">unknown</span>
                 </div>
-            </div>
-            <h3>Recent history</h3>
-            <div id="historyList" class="history-list">
-                No device selected
-            </div>
-        </section>
-    </main>
+
+                <div class="metrics-strip">
+                    <div class="metric">
+                        <span>CPU</span>
+                        <strong id="cpuValue">—</strong>
+                        <div class="meter">
+                            <div id="cpuMeter" class="meter-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric">
+                        <span>Memory</span>
+                        <strong id="memValue">—</strong>
+                        <div class="meter">
+                            <div id="memMeter" class="meter-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="metric">
+                        <span>RX</span>
+                        <strong id="rxValue">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>TX</span>
+                        <strong id="txValue">—</strong>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-box">
+                        <div class="chart-title">CPU history</div>
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-title">Memory history</div>
+                        <canvas id="memChart"></canvas>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="chart-title">Network RX/TX</div>
+                        <canvas id="netChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="samples-block">
+                    <div class="panel-header small">
+                        <h3>Recent samples</h3>
+                        <span id="historyCount" class="panel-meta">0 points</span>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>CPU</th>
+                                <th>Memory</th>
+                                <th>RX</th>
+                                <th>TX</th>
+                            </tr>
+                        </thead>
+                        <tbody id="samplesTable">
+                            <tr>
+                                <td colspan="5" class="empty-cell">No data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script src="/app.js"></script>
 </body>

@@ -1,43 +1,82 @@
 let selectedHostID = null;
+let devicesCache = [];
 
+let cpuChart;
+let memChart;
+let netChart;
+
+const refreshBtn = document.getElementById("refreshBtn");
+const apiStatus = document.getElementById("apiStatus");
+
+const nodesCount = document.getElementById("nodesCount");
+const onlineCount = document.getElementById("onlineCount");
+const offlineCount = document.getElementById("offlineCount");
 const devicesList = document.getElementById("devicesList");
-const selectedDevice = document.getElementById("selectedDevice");
+
+const selectedHost = document.getElementById("selectedHost");
+const selectedState = document.getElementById("selectedState");
 
 const cpuValue = document.getElementById("cpuValue");
-const memoryValue = document.getElementById("memoryValue");
+const memValue = document.getElementById("memValue");
 const rxValue = document.getElementById("rxValue");
 const txValue = document.getElementById("txValue");
 
-const historyList = document.getElementById("historyList");
-const refreshBtn = document.getElementById("refreshBtn");
+const cpuMeter = document.getElementById("cpuMeter");
+const memMeter = document.getElementById("memMeter");
 
-refreshBtn.addEventListener("click", async () => {
-    await loadDevices();
+const historyCount = document.getElementById("historyCount");
+const samplesTable = document.getElementById("samplesTable");
 
-    if (selectedHostID) {
-        await loadLatest(selectedHostID);
-        await loadHistory(selectedHostID);
-    }
-});
+refreshBtn.addEventListener("click", () => refreshAll());
 
-async function loadDevices() {
+initCharts();
+refreshAll();
+setInterval(refreshAll, 2000);
+
+async function refreshAll() {
     try {
-        const res = await fetch("/api/v1/devices");
+        setAPIStatus("checking", "warn");
 
-        if (!res.ok) {
-            throw new Error(`failed to load devices: ${res.status}`);
+        const devices = await fetchJSON("/api/v1/devices");
+        devicesCache = devices;
+
+        renderDevices(devices);
+
+        if (!selectedHostID && devices.length > 0) {
+            const online = devices.find((device) => device.online);
+            selectedHostID = online ? online.host_id : devices[0].host_id;
         }
 
-        const devices = await res.json();
-        renderDevices(devices);
-    } catch (err) {
-        devicesList.innerHTML = `<div class="error">${err.message}</div>`;
+        if (selectedHostID) {
+            await refreshSelectedNode(selectedHostID);
+        }
+
+        setAPIStatus("online", "ok");
+    } catch (error) {
+        console.error(error);
+        setAPIStatus("error", "bad");
     }
 }
 
+async function refreshSelectedNode(hostID) {
+    const latest = await fetchJSON(`/api/v1/devices/latest?host_id=${encodeURIComponent(hostID)}`);
+    const history = await fetchJSON(`/api/v1/devices/metrics?host_id=${encodeURIComponent(hostID)}&limit=80`);
+
+    const selectedDevice = devicesCache.find((device) => device.host_id === hostID);
+    renderLatest(selectedDevice, latest);
+    renderHistory(history);
+}
+
 function renderDevices(devices) {
-    if (!devices || devices.length === 0) {
-        devicesList.textContent = "No devices found";
+    const online = devices.filter((device) => device.online).length;
+    const offline = devices.length - online;
+
+    nodesCount.textContent = `${devices.length} registered`;
+    onlineCount.textContent = online;
+    offlineCount.textContent = offline;
+
+    if (devices.length === 0) {
+        devicesList.innerHTML = `<div class="empty">No devices registered</div>`;
         return;
     }
 
@@ -45,104 +84,202 @@ function renderDevices(devices) {
 
     for (const device of devices) {
         const item = document.createElement("div");
-        item.className = "device-item";
+        item.className = "node-item";
 
         if (device.host_id === selectedHostID) {
             item.classList.add("active");
         }
 
-        const statusClass = device.online ? "online" : "offline";
-        const statusText = device.online ? "online" : "offline";
+        const stateClass = device.online ? "online" : "offline";
+        const stateText = device.online ? "online" : "offline";
 
         item.innerHTML = `
-            <div class="device-host">${escapeHTML(device.host_id)}</div>
-            <div class="device-meta">last seen: ${formatTime(device.last_seen_at)}</div>
-            <span class="status ${statusClass}">${statusText}</span>
+            <div class="node-main">
+                <div class="node-host">${escapeHTML(shortHost(device.host_id))}</div>
+                <span class="node-state ${stateClass}">${stateText}</span>
+            </div>
+            <div class="node-meta">
+                last_seen=${formatDateTime(device.last_seen_at)}
+            </div>
         `;
 
         item.addEventListener("click", async () => {
             selectedHostID = device.host_id;
-            selectedDevice.textContent = `Selected: ${device.host_id}`;
-
-            renderDevices(devices);
-            await loadLatest(device.host_id);
-            await loadHistory(device.host_id);
+            renderDevices(devicesCache);
+            await refreshSelectedNode(selectedHostID);
         });
 
         devicesList.appendChild(item);
     }
 }
 
-async function loadLatest(hostID) {
-    try {
-        const res = await fetch(`/api/v1/devices/latest?host_id=${encodeURIComponent(hostID)}`);
+function renderLatest(device, latest) {
+    selectedHost.textContent = latest.host_id || selectedHostID || "No node selected";
 
-        if (!res.ok) {
-            throw new Error(`failed to load latest metrics: ${res.status}`);
-        }
+    const online = device && device.online;
+    selectedState.className = `node-state ${online ? "online" : "offline"}`;
+    selectedState.textContent = online ? "online" : "offline";
 
-        const metrics = await res.json();
+    const cpu = latest.cpu?.total_pct ?? 0;
+    const mem = latest.mem?.used_pct ?? 0;
+    const rx = latest.network?.rx_bps_total ?? 0;
+    const tx = latest.network?.tx_bps_total ?? 0;
 
-        cpuValue.textContent = formatPercent(metrics.cpu?.total_pct);
-        memoryValue.textContent = formatPercent(metrics.mem?.used_pct);
-        rxValue.textContent = formatBps(metrics.network?.rx_bps_total);
-        txValue.textContent = formatBps(metrics.network?.tx_bps_total);
-    } catch (err) {
-        selectedDevice.innerHTML = `<span class="error">${err.message}</span>`;
-    }
-}
+    cpuValue.textContent = `${cpu.toFixed(2)}%`;
+    memValue.textContent = `${mem.toFixed(2)}%`;
+    rxValue.textContent = formatBps(rx);
+    txValue.textContent = formatBps(tx);
 
-async function loadHistory(hostID) {
-    try {
-        const res = await fetch(`/api/v1/devices/metrics?host_id=${encodeURIComponent(hostID)}&limit=30`);
-
-        if (!res.ok) {
-            throw new Error(`failed to load history: ${res.status}`);
-        }
-
-        const history = await res.json();
-        renderHistory(history);
-    } catch (err) {
-        historyList.innerHTML = `<div class="error">${err.message}</div>`;
-    }
+    cpuMeter.style.width = `${clamp(cpu, 0, 100)}%`;
+    memMeter.style.width = `${clamp(mem, 0, 100)}%`;
 }
 
 function renderHistory(history) {
-    if (!history || history.length === 0) {
-        historyList.textContent = "No history found";
+    historyCount.textContent = `${history.length} points`;
+
+    const ordered = [...history].reverse();
+
+    const labels = ordered.map((item) => formatTime(item.timestamp));
+    const cpu = ordered.map((item) => item.cpu?.total_pct ?? 0);
+    const mem = ordered.map((item) => item.mem?.used_pct ?? 0);
+    const rx = ordered.map((item) => bytesToKB(item.network?.rx_bps_total ?? 0));
+    const tx = ordered.map((item) => bytesToKB(item.network?.tx_bps_total ?? 0));
+
+    updateChart(cpuChart, labels, [cpu]);
+    updateChart(memChart, labels, [mem]);
+    updateChart(netChart, labels, [rx, tx]);
+
+    renderSamples(history.slice(0, 8));
+}
+
+function renderSamples(samples) {
+    if (!samples || samples.length === 0) {
+        samplesTable.innerHTML = `<tr><td colspan="5" class="empty-cell">No data</td></tr>`;
         return;
     }
 
-    historyList.innerHTML = "";
+    samplesTable.innerHTML = "";
 
-    for (const item of history) {
-        const row = document.createElement("div");
-        row.className = "history-row";
+    for (const sample of samples) {
+        const row = document.createElement("tr");
 
         row.innerHTML = `
-            <span>${formatTime(item.timestamp)}</span>
-            <span>CPU: ${formatPercent(item.cpu?.total_pct)}</span>
-            <span>RAM: ${formatPercent(item.mem?.used_pct)}</span>
-            <span>RX: ${formatBps(item.network?.rx_bps_total)}</span>
-            <span>TX: ${formatBps(item.network?.tx_bps_total)}</span>
+            <td>${formatTime(sample.timestamp)}</td>
+            <td>${formatPercent(sample.cpu?.total_pct)}</td>
+            <td>${formatPercent(sample.mem?.used_pct)}</td>
+            <td>${formatBps(sample.network?.rx_bps_total)}</td>
+            <td>${formatBps(sample.network?.tx_bps_total)}</td>
         `;
 
-        historyList.appendChild(row);
+        samplesTable.appendChild(row);
     }
 }
 
-function formatPercent(value) {
-    if (typeof value !== "number") {
-        return "—";
+function initCharts() {
+    cpuChart = createLineChart("cpuChart", ["CPU %"], ["#7393b3"], 0, 100);
+    memChart = createLineChart("memChart", ["Memory %"], ["#6aa36f"], 0, 100);
+    netChart = createLineChart("netChart", ["RX KB/s", "TX KB/s"], ["#c3a45c", "#b86b6b"], 0, undefined);
+}
+
+function createLineChart(canvasID, datasetLabels, colors, min, max) {
+    const ctx = document.getElementById(canvasID);
+
+    return new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: datasetLabels.map((label, index) => ({
+                label,
+                data: [],
+                borderColor: colors[index],
+                backgroundColor: "transparent",
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.18,
+            })),
+        },
+        options: {
+            animation: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: "index",
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#7f8b96",
+                        boxWidth: 10,
+                        font: {
+                            family: "monospace",
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: "#56616c",
+                        maxTicksLimit: 8,
+                    },
+                    grid: {
+                        color: "#1d252d",
+                    },
+                },
+                y: {
+                    min,
+                    max,
+                    ticks: {
+                        color: "#56616c",
+                    },
+                    grid: {
+                        color: "#1d252d",
+                    },
+                },
+            },
+        },
+    });
+}
+
+function updateChart(chart, labels, datasets) {
+    chart.data.labels = labels;
+
+    datasets.forEach((data, index) => {
+        chart.data.datasets[index].data = data;
+    });
+
+    chart.update();
+}
+
+async function fetchJSON(url) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`${url}: ${response.status}`);
     }
 
+    return response.json();
+}
+
+function setAPIStatus(text, cls) {
+    apiStatus.textContent = text;
+    apiStatus.className = cls;
+}
+
+function shortHost(hostID) {
+    if (!hostID) return "unknown";
+    if (hostID.length <= 34) return hostID;
+    return `${hostID.slice(0, 31)}...`;
+}
+
+function formatPercent(value) {
+    if (typeof value !== "number") return "—";
     return `${value.toFixed(2)}%`;
 }
 
 function formatBps(value) {
-    if (typeof value !== "number") {
-        return "—";
-    }
+    if (typeof value !== "number") return "—";
 
     if (value >= 1024 * 1024) {
         return `${(value / 1024 / 1024).toFixed(2)} MB/s`;
@@ -155,13 +292,27 @@ function formatBps(value) {
     return `${value.toFixed(0)} B/s`;
 }
 
+function bytesToKB(value) {
+    if (typeof value !== "number") return 0;
+    return value / 1024;
+}
+
 function formatTime(value) {
-    if (!value) {
-        return "—";
-    }
+    if (!value) return "—";
+
+    const date = new Date(value);
+    return date.toLocaleTimeString();
+}
+
+function formatDateTime(value) {
+    if (!value) return "—";
 
     const date = new Date(value);
     return date.toLocaleString();
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
 }
 
 function escapeHTML(value) {
@@ -172,5 +323,3 @@ function escapeHTML(value) {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
 }
-
-loadDevices();
