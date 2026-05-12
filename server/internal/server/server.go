@@ -22,7 +22,8 @@ func (s *HTTPServer) StartServer() {
 	router.HandleFunc("/api/v1/devices/latest", s.httpHandlers.HandleGetLastMetricsByHostID).Methods("GET")
 	router.HandleFunc("/api/v1/devices/metrics", s.httpHandlers.HandleGetMetricsHistoryByHostID).Methods("GET")
 	router.HandleFunc("/debug/api", s.httpHandlers.HandleDebugLast).Methods("GET")
-
+	staticDir := "./web"
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir(staticDir)))
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatalf("Server start error: %v", err.Error())
 	}

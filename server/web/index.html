@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux Nodes Monitoring</title>
+    <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Linux Nodes Monitoring</h1>
+            <p>Distributed monitoring dashboard for Linux nodes</p>
+        </div>
+
+        <button id="refreshBtn">Refresh</button>
+    </header>
+
+    <main class="layout">
+        <section class="panel">
+            <h2>Devices</h2>
+            <div id="devicesList" class="devices-list">
+                Loading devices...
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Latest metrics</h2>
+
+            <div id="selectedDevice" class="selected-device">
+                Select a device
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-label">CPU</span>
+                    <strong id="cpuValue">—</strong>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-label">Memory</span>
+                    <strong id="memoryValue">—</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Network RX</span>
+                    <strong id="rxValue">—</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Network TX</span>
+                    <strong id="txValue">—</strong>
+                </div>
+            </div>
+            <h3>Recent history</h3>
+            <div id="historyList" class="history-list">
+                No device selected
+            </div>
+        </section>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>
