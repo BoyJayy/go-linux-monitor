@@ -5,13 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"monitoring/api"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type Storage struct {
-	pool *pgxpool.Pool
-}
 
 func New(pool *pgxpool.Pool) *Storage {
 	return &Storage{
@@ -119,4 +116,49 @@ func (s *Storage) GetLastMetrics(ctx context.Context) (api.Metrics, error) {
 	}
 
 	return metrics, nil
+}
+
+func (s *Storage) GetListDevices(ctx context.Context) ([]Device, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, host_id, first_seen_at, last_seen_at
+		FROM devices
+		ORDER BY last_seen_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list devices: %w", err)
+	}
+	defer rows.Close()
+	now := time.Now()
+	threshold := 30 * time.Second
+	devices := make([]Device, 0)
+	for rows.Next() {
+		var d Device
+		if err := rows.Scan(
+			&d.ID,
+			&d.HostID,
+			&d.FirstSeenAt,
+			&d.LastSeenAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan devices: %w", err)
+		}
+		d.Online = now.Sub(d.LastSeenAt) <= threshold
+		devices = append(devices, d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate devices: %w", err)
+	}
+	return devices, nil
+}
+
+func (s *Storage) GetSnapByDevice(ctx context.Context) (api.Metrics, error) {
+	var metric api.Metrics
+	err := s.pool.QueryRow(ctx, `
+		SELECT *
+		from metric_snapshot
+		
+	`).Scan(&metric)
+	if err != nil {
+		return api.Metrics{}, fmt.Errorf("scan metric: %w", err)
+	}
+
 }
