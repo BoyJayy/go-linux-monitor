@@ -150,15 +150,55 @@ func (s *Storage) GetListDevices(ctx context.Context) ([]Device, error) {
 	return devices, nil
 }
 
-func (s *Storage) GetSnapByDevice(ctx context.Context) (api.Metrics, error) {
+func (s *Storage) GetLatestMetricsByHostID(ctx context.Context, host_id string) (api.Metrics, error) {
 	var metric api.Metrics
+	var jsn []byte
 	err := s.pool.QueryRow(ctx, `
-		SELECT *
-		from metric_snapshot
-		
-	`).Scan(&metric)
+		SELECT ms.raw
+		from metric_snapshots ms
+		join devices d on d.id = ms.device_id
+		where d.host_id = $1
+		order by ms.collected_at desc
+		limit 1
+	`, host_id).Scan(&jsn)
 	if err != nil {
-		return api.Metrics{}, fmt.Errorf("scan metric: %w", err)
+		return api.Metrics{}, fmt.Errorf("Get last metrics by host_id: %w", err)
 	}
+	if err := json.Unmarshal(jsn, &metric); err != nil {
+		return api.Metrics{}, fmt.Errorf("Unmarshal latest metrics: %w", err)
+	}
+	return metric, nil
+}
 
+func (s *Storage) GetMetricsHistoryByHostID(ctx context.Context, hostID string, limit int) ([]api.Metrics, error) {
+	rows, err := s.pool.Query(ctx, `
+		select ms.raw
+		from metric_snapshots ms
+		join devices d on d.id = ms.device_id
+		where d.host_id = $1
+		order by ms.collected_at desc
+		limit $2
+	`, hostID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("get metrics history by host_id: %w", err)
+	}
+	defer rows.Close()
+
+	metricsHistory := make([]api.Metrics, 0)
+
+	for rows.Next() {
+		var rawJSON []byte
+		if err := rows.Scan(&rawJSON); err != nil {
+			return nil, fmt.Errorf("scan metrics history row: %w", err)
+		}
+		var metric api.Metrics
+		if err := json.Unmarshal(rawJSON, &metric); err != nil {
+			return nil, fmt.Errorf("unmarshal metrics history row: %w", err)
+		}
+		metricsHistory = append(metricsHistory, metric)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate metrics history: %w", err)
+	}
+	return metricsHistory, nil
 }
