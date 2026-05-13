@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"server/internal/handler"
 	"server/internal/server"
 	"server/internal/storage"
@@ -13,7 +14,11 @@ import (
 
 func main() {
 	ctx := context.Background()
-	conn, err := pgxpool.New(ctx, "postgres://postgres:537877@localhost:5432/monitoring service")
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+	conn, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		log.Fatal("failed to create postgres pool: ", err)
 	}

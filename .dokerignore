@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+**/.DS_Store
+
+**/tmp
+**/bin
+**/dist
+**/build
+
+**/*.log
+
+server/web/node_modules
+dashboard

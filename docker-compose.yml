@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: monitoring-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d 'monitoring service'"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: monitoring-server
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  agent-node-1:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: monitoring-agent-node-1
+    environment:
+      HOST_ID: node-1
+      SERVER_URL: http://server:8080/api/v1/metrics
+      COLLECTION_INTERVAL: 2s
+      REQUEST_TIMEOUT: 3s
+    depends_on:
+      - server
+
+  agent-node-2:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: monitoring-agent-node-2
+    environment:
+      HOST_ID: node-2
+      SERVER_URL: http://server:8080/api/v1/metrics
+      COLLECTION_INTERVAL: 2s
+      REQUEST_TIMEOUT: 3s
+    depends_on:
+      - server
+
+  agent-node-3:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: monitoring-agent-node-3
+    environment:
+      HOST_ID: node-3
+      SERVER_URL: http://server:8080/api/v1/metrics
+      COLLECTION_INTERVAL: 2s
+      REQUEST_TIMEOUT: 3s
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
