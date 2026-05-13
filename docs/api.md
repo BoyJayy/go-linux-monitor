@@ -1,101 +1,100 @@
 
-# Monitoring System API
+# HTTP API распределённой системы мониторинга Linux-узлов вычислительного кластера
 
-> Current API contract for the monitoring project.
-> This document reflects the project state where:
-> - the **agent** already builds unified snapshots and sends them over HTTP JSON
-> - the **server** is being implemented with a first ingest endpoint
+## 1. Назначение
 
-## 1. Purpose
+HTTP API используется для приема метрик от агентов и для выдачи данных клиентским интерфейсам. На текущем этапе API работает поверх HTTP и использует JSON для структурированных данных.
 
-The API is used to transfer a system snapshot from the agent to the backend.
+Основной поток записи:
 
-Current transport:
-- HTTP
-- JSON
-- request timeout configured on the agent side
-
-## 2. Base idea
-
-Flow:
-
-`agent -> HTTP POST -> server`
-
-The agent periodically:
-1. builds a `Metrics` snapshot
-2. serializes it to JSON
-3. sends it to the backend endpoint
-
-## 3. Endpoints
-
-### 3.1 Health check
-
-**Method:** `GET`  
-**Path:** `/health`
-
-#### Purpose
-Used to verify that the backend process is alive.
-
-#### Success response
-- Status: `200 OK`
-
-#### Example response
----
-```json
-{
-  "status": "ok"
-}
+```text
+agent -> POST /api/v1/metrics -> server -> PostgreSQL
 ```
----
 
-### 3.2 Metrics ingest
+Основной поток чтения:
 
-**Method:** `POST`  
-**Path:** `/api/v1/metrics`
+```text
+web dashboard -> GET /api/v1/... -> server -> PostgreSQL
+```
 
-#### Purpose
-Accepts one snapshot from the monitoring agent.
+## 2. Базовый адрес
 
-#### Request headers
----
+Для локального Docker Compose-стенда:
+
+```text
+http://localhost:8080
+```
+
+Внутри Docker-сети агенты обращаются к серверу по адресу:
+
+```text
+http://server:8080/api/v1/metrics
+```
+
+## 3. Health check
+
+### `GET /health`
+
+Проверяет, что процесс сервера запущен и принимает HTTP-запросы.
+
+Успешный ответ:
+
+```http
+HTTP/1.1 200 OK
+```
+
+```text
+ok
+```
+
+Пример:
+
+```bash
+curl http://localhost:8080/health
+```
+
+## 4. Прием метрик
+
+### `POST /api/v1/metrics`
+
+Принимает один снимок метрик от агента.
+
+Заголовки запроса:
+
 ```http
 Content-Type: application/json
+Accept: application/json
 ```
----
 
-#### Request body
-JSON object matching the `Metrics` structure.
+Тело запроса должно соответствовать структуре `Metrics`.
 
-## 4. Metrics payload
+Минимальный пример:
 
-Current payload shape:
-
----
 ```json
 {
   "timestamp": "2026-03-24T12:35:24.943217753Z",
-  "host_id": "c5cd5bea-81fb-4f81-879f-cc5ca1a61e50",
+  "host_id": "node-1",
   "cpu": {
-    "user_pct": 0.0,
-    "nice_pct": 0.0,
-    "system_pct": 0.0623,
-    "idle_pct": 99.8753,
-    "iowait_pct": 0.0,
-    "irq_pct": 0.0,
-    "softirq_pct": 0.0623,
-    "steal_pct": 0.0,
-    "total_pct": 0.1246,
+    "user_pct": 0,
+    "nice_pct": 0,
+    "system_pct": 0.12,
+    "idle_pct": 99.8,
+    "iowait_pct": 0,
+    "irq_pct": 0,
+    "softirq_pct": 0.08,
+    "steal_pct": 0,
+    "total_pct": 0.2,
     "per_core_pct": {
       "cpu0": {
-        "user_pct": 0.0,
-        "nice_pct": 0.0,
-        "system_pct": 0.0,
-        "idle_pct": 100.0,
-        "iowait_pct": 0.0,
-        "irq_pct": 0.0,
-        "softirq_pct": 0.0,
-        "steal_pct": 0.0,
-        "total_pct": 0.0
+        "user_pct": 0,
+        "nice_pct": 0,
+        "system_pct": 0.1,
+        "idle_pct": 99.9,
+        "iowait_pct": 0,
+        "irq_pct": 0,
+        "softirq_pct": 0,
+        "steal_pct": 0,
+        "total_pct": 0.1
       }
     }
   },
@@ -131,106 +130,208 @@ Current payload shape:
   }
 }
 ```
----
 
-## 5. Field semantics
+Успешный ответ:
 
-### Top-level fields
-
-- `timestamp` — time when the snapshot was created by the agent
-- `host_id` — stable host identifier resolved by the agent
-
-### CPU
-
-- `total_pct` — total CPU usage percent
-- breakdown fields:
-  - `user_pct`
-  - `nice_pct`
-  - `system_pct`
-  - `idle_pct`
-  - `iowait_pct`
-  - `irq_pct`
-  - `softirq_pct`
-  - `steal_pct`
-- `per_core_pct` — usage per CPU core
-
-### Memory
-
-- `total_bytes`
-- `available_bytes`
-- `used_bytes`
-- `used_pct`
-
-### Disk
-
-Disk stats are collected **per mounted filesystem**, not per physical disk device.
-
-Each entry contains:
-- `mount`
-- `total_bytes`
-- `free_bytes`
-- `used_bytes`
-- `used_pct`
-
-### Network
-
-- `rx_bytes_total`
-- `tx_bytes_total`
-- `rx_bps_total`
-- `tx_bps_total`
-- `ifaces` — per-interface counters and rates
-
-## 6. Validation rules for ingest
-
-Current minimum validation for accepted snapshots:
-
-- `host_id` must be non-empty
-- `timestamp` must be present and non-zero
-
-Further validation may be extended later.
-
-## 7. Response codes
-
-### `GET /health`
-- `200 OK` — server is alive
-
-### `POST /api/v1/metrics`
-- `200 OK` — metrics accepted
-- `400 Bad Request` — invalid JSON or invalid payload
-- `405 Method Not Allowed` — wrong HTTP method
-- `500 Internal Server Error` — internal processing error
-
-## 8. Example curl requests
-
-### Health
----
-```bash
-curl http://localhost:8080/health
+```http
+HTTP/1.1 200 OK
 ```
----
 
-### Metrics ingest
----
+```text
+ok
+```
+
+Правила валидации:
+
+- `host_id` обязателен и не должен быть пустым;
+- `timestamp` обязателен и не должен быть нулевым;
+- тело запроса должно быть валидным JSON.
+
+Коды ответа:
+
+- `200 OK` — снимок принят и сохранен;
+- `400 Bad Request` — некорректный JSON или нарушение минимального контракта;
+- `405 Method Not Allowed` — использован неподдерживаемый HTTP-метод;
+- `500 Internal Server Error` — ошибка сохранения или внутренняя ошибка сервера.
+
+Пример:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/metrics \
   -H "Content-Type: application/json" \
   -d @metrics.json
 ```
----
 
-## 9. Agent configuration related to the API
+## 5. Список устройств
 
-Current important runtime variables:
+### `GET /api/v1/devices`
 
-- `SERVER_URL` — full metrics ingest endpoint  
-  Example: `http://localhost:8080/api/v1/metrics`
-- `COLLECTION_INTERVAL` — snapshot collection interval  
-  Example: `2s`
-- `REQUEST_TIMEOUT` — maximum HTTP send timeout  
-  Example: `3s`
+Возвращает список зарегистрированных узлов, отсортированный по времени последней активности.
 
-## 10. Notes
+Успешный ответ:
 
-- The sender currently uses synchronous HTTP sending.
-- Retry policy is planned as a later improvement.
-- Persistent storage is planned for the backend after the first in-memory ingest stage.
+```json
+[
+  {
+    "id": 1,
+    "host_id": "node-1",
+    "first_seen_at": "2026-03-24T12:30:00Z",
+    "last_seen_at": "2026-03-24T12:35:24Z",
+    "online": true
+  }
+]
+```
+
+Семантика поля `online`:
+
+- `true` — последний снимок получен не более 30 секунд назад;
+- `false` — последний снимок старше 30 секунд.
+
+Коды ответа:
+
+- `200 OK` — список успешно получен;
+- `405 Method Not Allowed` — использован неподдерживаемый метод;
+- `500 Internal Server Error` — ошибка чтения из хранилища.
+
+Пример:
+
+```bash
+curl http://localhost:8080/api/v1/devices
+```
+
+## 6. Последний снимок по узлу
+
+### `GET /api/v1/devices/latest?host_id=<id>`
+
+Возвращает последний сохраненный снимок метрик для указанного `host_id`.
+
+Параметры запроса:
+
+- `host_id` — обязательный идентификатор узла.
+
+Успешный ответ:
+
+```json
+{
+  "timestamp": "2026-03-24T12:35:24Z",
+  "host_id": "node-1",
+  "cpu": {
+    "total_pct": 0.2,
+    "per_core_pct": {}
+  },
+  "mem": {
+    "total_bytes": 8217731072,
+    "available_bytes": 7573880832,
+    "used_bytes": 643850240,
+    "used_pct": 7.8349
+  },
+  "disk": [],
+  "network": {
+    "rx_bytes_total": 2118950,
+    "tx_bytes_total": 26008,
+    "rx_bps_total": 0,
+    "tx_bps_total": 0,
+    "ifaces": []
+  }
+}
+```
+
+Коды ответа:
+
+- `200 OK` — снимок найден;
+- `400 Bad Request` — параметр `host_id` отсутствует;
+- `405 Method Not Allowed` — использован неподдерживаемый метод;
+- `500 Internal Server Error` — снимок не найден или произошла ошибка чтения.
+
+Пример:
+
+```bash
+curl "http://localhost:8080/api/v1/devices/latest?host_id=node-1"
+```
+
+## 7. История метрик по узлу
+
+### `GET /api/v1/devices/metrics?host_id=<id>&limit=<n>`
+
+Возвращает историю снимков для указанного `host_id`. Снимки отсортированы от новых к старым.
+
+Параметры запроса:
+
+- `host_id` — обязательный идентификатор узла;
+- `limit` — необязательное количество снимков, по умолчанию `100`.
+
+Правила для `limit`:
+
+- значение должно быть числом;
+- значение должно быть больше нуля;
+- значения больше `1000` ограничиваются сервером до `1000`.
+
+Успешный ответ:
+
+```json
+[
+  {
+    "timestamp": "2026-03-24T12:35:24Z",
+    "host_id": "node-1",
+    "cpu": {
+      "total_pct": 0.2,
+      "per_core_pct": {}
+    },
+    "mem": {
+      "total_bytes": 8217731072,
+      "available_bytes": 7573880832,
+      "used_bytes": 643850240,
+      "used_pct": 7.8349
+    },
+    "disk": [],
+    "network": {
+      "rx_bytes_total": 2118950,
+      "tx_bytes_total": 26008,
+      "rx_bps_total": 0,
+      "tx_bps_total": 0,
+      "ifaces": []
+    }
+  }
+]
+```
+
+Коды ответа:
+
+- `200 OK` — история получена;
+- `400 Bad Request` — отсутствует `host_id`, `limit` не является числом или `limit <= 0`;
+- `405 Method Not Allowed` — использован неподдерживаемый метод;
+- `500 Internal Server Error` — ошибка чтения из хранилища.
+
+Пример:
+
+```bash
+curl "http://localhost:8080/api/v1/devices/metrics?host_id=node-1&limit=80"
+```
+
+## 8. Диагностический эндпоинт
+
+### `GET /debug/api`
+
+Возвращает последний сохраненный снимок метрик независимо от `host_id`. Эндпоинт предназначен для локальной отладки и не должен рассматриваться как стабильный публичный контракт.
+
+Пример:
+
+```bash
+curl http://localhost:8080/debug/api
+```
+
+## 9. Требования к клиентам
+
+Клиент, отправляющий метрики, должен:
+
+- передавать `Content-Type: application/json`;
+- использовать полный URL эндпоинта приема метрик;
+- обеспечивать непустой `host_id`;
+- передавать ненулевой `timestamp`;
+- учитывать, что доставка на текущем этапе является синхронной и не содержит серверной очереди.
+
+Клиент, читающий данные, должен:
+
+- указывать `host_id` для запросов последнего снимка и истории;
+- учитывать сортировку истории от новых снимков к старым;
+- обрабатывать временное отсутствие данных по узлу как штатную ситуацию начального запуска.
