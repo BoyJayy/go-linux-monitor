@@ -16,10 +16,11 @@ import (
 
 func NewHTTP(endpoint string, timeout time.Duration) *HTTPSender {
 	return &HTTPSender{
-		endpoint: endpoint,
-		client:   &http.Client{Timeout: timeout},
+		endpoint:    endpoint,
+		client:      &http.Client{Timeout: timeout},
+		maxAttempts: 3,
+		baseBackoff: 500 * time.Millisecond,
 	}
-
 }
 
 func (s *HTTPSender) Send(metrics snapshot.Metrics) error {
@@ -43,4 +44,38 @@ func (s *HTTPSender) Send(metrics snapshot.Metrics) error {
 		return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(respBody))
 	}
 	return nil
+}
+
+func (s *HTTPSender) SendWithRetry(metrics snapshot.Metrics) error {
+	var lastErr error
+	backoff := s.baseBackoff
+
+	for attempt := 1; attempt <= s.maxAttempts; attempt++ {
+		err := s.Send(metrics)
+		if err == nil {
+			if attempt > 1 {
+				fmt.Printf("metrics sent after retry: host_id=%s attempt=%d\n", metrics.HostID, attempt)
+			}
+			return nil
+		}
+
+		lastErr = err
+
+		fmt.Printf(
+			"send metrics failed: host_id=%s attempt=%d/%d error=%v\n",
+			metrics.HostID,
+			attempt,
+			s.maxAttempts,
+			err,
+		)
+
+		if attempt == s.maxAttempts {
+			break
+		}
+
+		time.Sleep(backoff)
+		backoff *= 2
+	}
+
+	return fmt.Errorf("send metrics failed after %d attempts: %w", s.maxAttempts, lastErr)
 }

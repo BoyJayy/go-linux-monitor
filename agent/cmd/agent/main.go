@@ -20,7 +20,7 @@ func main() {
 			continue
 		}
 		//fmt.Printf("%+v\n", metrics)
-		err = sender.Send(metrics)
+		err = sender.SendWithRetry(metrics)
 		if err != nil {
 			log.Printf("Error while sending metrics: %v", err)
 			continue
