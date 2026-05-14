@@ -1,12 +1,9 @@
 FROM golang:1.25.5 AS builder
-
 WORKDIR /src
 
 COPY api ./api
 COPY server ./server
-
 RUN go work init ./api ./server
-
 WORKDIR /src/server
 
 RUN go mod download

@@ -4,15 +4,12 @@ WORKDIR /src
 
 COPY api ./api
 COPY agent ./agent
-
 RUN go work init ./api ./agent
 
 WORKDIR /src/agent
 
 RUN go mod download
 RUN go build -o /bin/monitoring-agent ./cmd/agent
-
-
 FROM debian:bookworm-slim
 
 WORKDIR /app
